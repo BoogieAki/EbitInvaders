@@ -90,7 +90,7 @@ const (
 	gameWon         = 1
 	gameLost        = 2
 	gameNextLevel   = 4
-	gameStartScreen = 5
+	gameStartScreen = 5 // TODO: implement start screen
 
 	// game levels
 	gameLevel1 = 1
@@ -124,32 +124,33 @@ func init() {
 }
 
 func (g *Game) Update() error {
-	// handle game status
-	if g.gameStatus != gameOngoing &&
-		g.gameStatus != gameNextLevel &&
-		ebiten.IsKeyPressed(ebiten.KeyEnter) {
-		g.restartGame()
-		return nil
-	}
-	// TODO: game will never end
-	if g.gameStatus == gameNextLevel && ebiten.IsKeyPressed(ebiten.KeyEnter) {
-		g.startNextLevel()
-		return nil
-	}
+	g.handleKeyPress()
+
 	if g.gameStatus != gameOngoing {
 		return nil
 	}
-	// other handles which doesn't stop to game
-	g.handleKeyPress()
+
+	g.handleGameStatusChange()
 	g.handleBulletMove()
 	g.handleEnemyMove()
 	g.handleCollisions()
-	g.handleGameEnd() // TODO: game will never end with WON!
 	return nil
 }
 
-func (g *Game) handleKeyPress() {
-	// Move player
+func (g *Game) startScreenKeys() {
+	if g.gameStatus != gameStartScreen {
+		return
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyEnter) {
+		g.gameStatus = gameOngoing
+	}
+}
+
+func (g *Game) onGoingKeys() {
+	if g.gameStatus != gameOngoing {
+		return
+	}
+	// player keys
 	// move left
 	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) && g.playerX > 0 {
 		g.playerX -= playerMoveSpeed
@@ -174,6 +175,42 @@ func (g *Game) handleKeyPress() {
 	}
 }
 
+func (g *Game) lostKeys() {
+	if g.gameStatus != gameLost {
+		return
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyEnter) {
+		g.restartGame()
+	}
+}
+
+func (g *Game) nextLevelKeys() {
+	if g.gameStatus != gameNextLevel {
+		return
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyEnter) {
+		g.startNextLevel()
+	}
+}
+
+func (g *Game) wonKeys() {
+	if g.gameStatus != gameWon {
+		return
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyEnter) {
+		// TODO: create end screen with LOST and WON
+		g.restartGame()
+	}
+}
+
+func (g *Game) handleKeyPress() {
+	g.startScreenKeys()
+	g.onGoingKeys()
+	g.lostKeys()
+	g.nextLevelKeys()
+	g.wonKeys()
+}
+
 func (g *Game) handleBulletMove() {
 	// Update bullets' position
 	var activeBullets []*Bullet
@@ -189,6 +226,10 @@ func (g *Game) handleBulletMove() {
 
 func (g *Game) handleEnemyMove() {
 	var activeEnemies []*Enemy
+
+	if len(g.enemies) == 0 {
+		return
+	}
 
 	if g.enemiesMoveRight && g.enemies[len(g.enemies)-1].x+enemySize >= screenWidth {
 		g.enemiesMoveRight = false
@@ -229,12 +270,14 @@ func (g *Game) gameReset() {
 
 func (g *Game) restartGame() {
 	g.gameReset()
-	g.InitializeEnemies(gameLevel1) // Reset enemies
+	g.gameLevel = gameLevel1
+	g.InitializeEnemies(g.gameLevel)
 }
 
 func (g *Game) startNextLevel() {
 	g.gameReset()
-	g.InitializeEnemies(gameLevel1) // Reset enemies
+	g.gameLevel += 1
+	g.InitializeEnemies(g.gameLevel)
 }
 
 func (g *Game) handleCollisions() {
@@ -282,21 +325,26 @@ func (g *Game) handleCollisions() {
 	g.enemies = remainingEnemies
 }
 
-func (g *Game) handleGameEnd() {
-	// won
-	// TODO: game will never end with WON
-	if len(g.enemies) == 0 && g.gameLevel == gameLevel5 {
-		g.soundPlayer.PlaySound(soundWon)
-		g.gameStatus = gameWon
-	}
+func (g *Game) handleGameStatusChange() {
 	// next level
-	if len(g.enemies) == 0 {
+	if len(g.enemies) == 0 && g.gameLevel != gameLevel5 {
+		fmt.Println("Current game level: " + strconv.Itoa(g.gameLevel))
+		fmt.Println("Level cleared! More to come")
 		g.soundPlayer.PlaySound(soundWon)
 		g.gameStatus = gameNextLevel
 	}
-	// lost
+
+	// player won if cleared all the stages
+	if len(g.enemies) == 0 && g.gameLevel == gameLevel5 {
+		fmt.Println("all levels cleared. Player won!")
+		g.soundPlayer.PlaySound(soundWon)
+		g.gameStatus = gameWon
+	}
+
+	// lost when enemy is in the same row as player
 	for _, enemy := range g.enemies {
 		if enemy.y >= playerStartY-playerSize {
+			fmt.Println("YOU LOST!")
 			g.soundPlayer.PlaySound(soundExplosion)
 			g.gameStatus = gameLost
 			break
@@ -309,6 +357,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	bgOptions := &ebiten.DrawImageOptions{}
 	bgOptions.GeoM.Translate(0, 0)
 	screen.DrawImage(background, bgOptions)
+
+	if g.gameStatus == gameStartScreen {
+		ebitenutil.DebugPrint(screen, "This is the start screen. Press Enter to play the game")
+		return
+	}
 
 	// Level won text
 	levelString := strconv.Itoa(g.gameLevel)
@@ -433,6 +486,7 @@ func main() {
 		lastFireTime: time.Now().Add(-fireCooldown),
 		gameLevel:    gameLevel1,
 		soundPlayer:  soundPlayer,
+		gameStatus:   gameStartScreen,
 	}
 
 	game.InitializeEnemies(gameLevel1)
