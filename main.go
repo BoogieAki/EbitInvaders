@@ -2,6 +2,8 @@ package main
 
 import (
 	"image/color"
+	"math"
+	"strconv"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -41,10 +43,10 @@ const (
 	gameNextLevel = 4
 
 	gameLevel1 = 1
-	gameLevel2 = 1
-	gameLevel3 = 1
-	gameLevel4 = 1
-	gameLevel5 = 1
+	gameLevel2 = 2
+	gameLevel3 = 3
+	gameLevel4 = 4
+	gameLevel5 = 5
 
 	playerSize      = 12
 	playerStartX    = screenWidth / 2
@@ -68,7 +70,8 @@ func (g *Game) Update() error {
 		g.restartGame()
 		return nil
 	}
-	if g.gameStatus == gameNextLevel {
+	// TODO: game will never end
+	if g.gameStatus == gameNextLevel && ebiten.IsKeyPressed(ebiten.KeyEnter) {
 		g.startNextLevel()
 		return nil
 	}
@@ -80,7 +83,7 @@ func (g *Game) Update() error {
 	g.handleBulletMove()
 	g.handleEnemyMove()
 	g.handleCollisions()
-	g.handleGameEnd()
+	g.handleGameEnd() // TODO: game will never end with WON!
 	return nil
 }
 
@@ -96,6 +99,12 @@ func (g *Game) handleKeyPress() {
 	}
 	// fire bullets
 	if ebiten.IsKeyPressed(ebiten.KeySpace) && time.Since(g.lastFireTime) >= fireCooldown {
+		// fire a new bullet and update the last fire time
+		g.bullets = append(g.bullets, &Bullet{x: g.playerX + playerSize/2 - bulletWidth/2, y: g.playerY})
+		g.lastFireTime = time.Now()
+	}
+	// fire chaingun
+	if ebiten.IsKeyPressed(ebiten.KeyC) && time.Since(g.lastFireTime) >= time.Millisecond*10 {
 		// fire a new bullet and update the last fire time
 		g.bullets = append(g.bullets, &Bullet{x: g.playerX + playerSize/2 - bulletWidth/2, y: g.playerY})
 		g.lastFireTime = time.Now()
@@ -211,6 +220,7 @@ func (g *Game) handleCollisions() {
 
 func (g *Game) handleGameEnd() {
 	// won
+	// TODO: game will never end with WON
 	if len(g.enemies) == 0 && g.gameLevel == gameLevel5 {
 		g.gameStatus = gameWon
 	}
@@ -228,21 +238,24 @@ func (g *Game) handleGameEnd() {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	// Level won text
+	levelString := strconv.Itoa(g.gameLevel)
 	if g.gameStatus == gameNextLevel {
-		ebitenutil.DebugPrint(screen, "Level Won! Press Enter to proceed next level")
+		ebitenutil.DebugPrint(screen, "Level "+levelString+" cleared! Press Enter to proceed to the next level")
 		return
 	}
+	// Game won text
 	if g.gameStatus == gameWon {
 		// Display "You Won!" when the game is over
 		ebitenutil.DebugPrint(screen, "You Won! Press Enter to Restart")
 		return
 	}
+	// Game lost text
 	if g.gameStatus == gameLost {
-		// Display "You Won!" when the game is over
 		ebitenutil.DebugPrint(screen, "You Lost! Press Enter to Restart")
 		return
 	}
-	ebitenutil.DebugPrint(screen, gameTitle)
+	ebitenutil.DebugPrint(screen, gameTitle+": level "+levelString)
 	// draw player
 	vector.DrawFilledRect(screen, g.playerX, g.playerY, playerSize, playerSize, color.White, false)
 
@@ -265,9 +278,9 @@ func (g *Game) InitializeEnemies(gameLevel int) {
 	g.enemies = []*Enemy{}
 	g.enemiesMoveRight = true
 	g.enemiesMoveDown = false
-	g.enemiesSpeed = float32(1 + (gameLevel / 3))
+	g.enemiesSpeed = float32(1 + (gameLevel / 5))
 	enemyCount := 10 * gameLevel
-	enemyRows := enemyCount / 10
+	enemyRows := int(math.Ceil(float64(enemyCount) / 10))
 	enemyColumns := enemyCount / enemyRows
 	enemyStartX := (screenWidth - enemyColumns*enemySize - (enemyColumns-1)*enemySpace) / 2 // top middle of the screen
 	enemyStartY := 40
