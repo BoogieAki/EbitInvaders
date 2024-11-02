@@ -1,2 +1,4 @@
 # EbitInvaders
-Space Invaders with Go and Ebitengine
+Space Invaders like game with Go and Ebitengine
+
+Sounds (mostly) from https://sfxr.me/

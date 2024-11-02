@@ -70,11 +70,14 @@ var (
 )
 
 const (
+	// misc
 	gameTitle = "Ebit Invaders"
 
+	// screen
 	screenWidth  = 640
 	screenHeight = 480
 
+	// sounds
 	sampleRate         = 44100
 	soundShoot         = "shoot"
 	soundHit           = "hit"
@@ -82,27 +85,33 @@ const (
 	soundEnemyStepDown = "stepDown"
 	soundWon           = "won"
 
-	gameOngoing   = 0
-	gameWon       = 1
-	gameLost      = 2
-	gameNextLevel = 4
+	// game statuses
+	gameOngoing     = 0
+	gameWon         = 1
+	gameLost        = 2
+	gameNextLevel   = 4
+	gameStartScreen = 5
 
+	// game levels
 	gameLevel1 = 1
 	gameLevel2 = 2
 	gameLevel3 = 3
 	gameLevel4 = 4
 	gameLevel5 = 5
 
+	// player
 	playerSize      = 12
 	playerStartX    = screenWidth / 2
 	playerStartY    = float32(screenHeight - playerSize - 10)
 	playerMoveSpeed = 2
 
+	// player shooting
 	bulletWidth  = 2
 	bulletHeight = 4
 	bulletSpeed  = 5
 	fireCooldown = 1 * time.Second
 
+	// enemy
 	enemySize  = 20
 	enemySpace = 20
 )
@@ -430,6 +439,7 @@ func main() {
 
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle(gameTitle)
+
 	if err := ebiten.RunGame(game); err != nil {
 		panic(err)
 	}
