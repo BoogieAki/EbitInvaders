@@ -25,6 +25,11 @@ type Enemy struct {
 	x, y float32
 }
 
+type Sound struct {
+	name   string
+	source []byte
+}
+
 type SoundPlayer struct {
 	audioContext *audio.Context
 	players      map[string]*audio.Player
@@ -216,8 +221,6 @@ func (g *Game) gameReset() {
 func (g *Game) restartGame() {
 	g.gameReset()
 	g.InitializeEnemies(gameLevel1) // Reset enemies
-	g.gameStatus = gameOngoing      // Set game state to ongoing
-	g.lastFireTime = time.Now().Add(-fireCooldown)
 }
 
 func (g *Game) startNextLevel() {
@@ -345,6 +348,7 @@ func (g *Game) InitializeEnemies(gameLevel int) {
 	enemyColumns := enemyCount / enemyRows
 	enemyStartX := (screenWidth - enemyColumns*enemySize - (enemyColumns-1)*enemySpace) / 2 // top middle of the screen
 	enemyStartY := 40
+
 	for row := 0; row < enemyRows; row++ {
 		for col := 0; col < enemyColumns; col++ {
 			x := float32(enemyStartX + col*(enemySize+enemySpace))
@@ -386,21 +390,25 @@ func (sp *SoundPlayer) PlaySound(name string) {
 }
 
 func loadSounds(soundPlayer *SoundPlayer) error {
-	if err := soundPlayer.LoadSound(soundShoot, shootSoundByte); err != nil {
-		return err
+	fmt.Println("Start loading sounds")
+
+	sounds := []*Sound{
+		{soundShoot, shootSoundByte},
+		{soundHit, hitSoundByte},
+		{soundExplosion, explosionSoundByte},
+		{soundEnemyStepDown, enemyStepDownSoundByte},
+		{soundWon, wonSoundByte},
 	}
-	if err := soundPlayer.LoadSound(soundHit, hitSoundByte); err != nil {
-		return err
+
+	for _, sound := range sounds {
+		fmt.Println("Sound: " + sound.name + " loaded.")
+		if err := soundPlayer.LoadSound(sound.name, sound.source); err != nil {
+			log.Fatal(err)
+			return err
+		}
 	}
-	if err := soundPlayer.LoadSound(soundExplosion, explosionSoundByte); err != nil {
-		return err
-	}
-	if err := soundPlayer.LoadSound(soundEnemyStepDown, enemyStepDownSoundByte); err != nil {
-		return err
-	}
-	if err := soundPlayer.LoadSound(soundWon, wonSoundByte); err != nil {
-		return err
-	}
+
+	fmt.Println("All sounds loaded success!")
 	return nil
 }
 
