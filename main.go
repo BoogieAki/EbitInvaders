@@ -205,23 +205,24 @@ func (g *Game) handleEnemyMove() {
 	g.enemies = activeEnemies
 }
 
-func (g *Game) restartGame() {
+func (g *Game) gameReset() {
 	g.playerX = playerStartX
 	g.playerY = playerStartY
-	g.bullets = []*Bullet{}         // Clear bullets
+	g.bullets = []*Bullet{}
+	g.gameStatus = gameOngoing
+	g.lastFireTime = time.Now().Add(-fireCooldown)
+}
+
+func (g *Game) restartGame() {
+	g.gameReset()
 	g.InitializeEnemies(gameLevel1) // Reset enemies
 	g.gameStatus = gameOngoing      // Set game state to ongoing
 	g.lastFireTime = time.Now().Add(-fireCooldown)
 }
 
 func (g *Game) startNextLevel() {
-	g.playerX = playerStartX
-	g.playerY = playerStartY
-	g.bullets = []*Bullet{} // Clear bullets
-	g.gameLevel += 1
-	g.InitializeEnemies(g.gameLevel) // Reset enemies
-	g.gameStatus = gameOngoing       // Set game state to ongoing
-	g.lastFireTime = time.Now().Add(-fireCooldown)
+	g.gameReset()
+	g.InitializeEnemies(gameLevel1) // Reset enemies
 }
 
 func (g *Game) handleCollisions() {
