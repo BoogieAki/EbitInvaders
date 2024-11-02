@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"fmt"
 	"image/color"
+	"log"
 	"math"
 	"strconv"
 	"time"
@@ -42,20 +43,26 @@ type Game struct {
 	soundPlayer      *SoundPlayer
 }
 
-//go:embed assets/sound/laserShoot.wav
-var shootSoundByte []byte
+var (
+	err error
 
-//go:embed assets/sound/hitHurt.wav
-var hitSoundByte []byte
+	//go:embed assets/sound/laserShoot.wav
+	shootSoundByte []byte
 
-//go:embed assets/sound/explosion.wav
-var explosionSoundByte []byte
+	//go:embed assets/sound/hitHurt.wav
+	hitSoundByte []byte
 
-//go:embed assets/sound/enemyStepDown.wav
-var enemyStepDownSoundByte []byte
+	//go:embed assets/sound/explosion.wav
+	explosionSoundByte []byte
 
-//go:embed assets/sound/won.wav
-var wonSoundByte []byte
+	//go:embed assets/sound/enemyStepDown.wav
+	enemyStepDownSoundByte []byte
+
+	//go:embed assets/sound/won.wav
+	wonSoundByte []byte
+
+	background *ebiten.Image
+)
 
 const (
 	gameTitle = "Ebit Invaders"
@@ -94,6 +101,13 @@ const (
 	enemySize  = 20
 	enemySpace = 20
 )
+
+func init() {
+	background, _, err = ebitenutil.NewImageFromFile("assets/img/bgSpace.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 func (g *Game) Update() error {
 	// handle game status
@@ -278,6 +292,11 @@ func (g *Game) handleGameEnd() {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	// bg
+	bgOptions := &ebiten.DrawImageOptions{}
+	bgOptions.GeoM.Translate(0, 0)
+	screen.DrawImage(background, bgOptions)
+
 	// Level won text
 	levelString := strconv.Itoa(g.gameLevel)
 	if g.gameStatus == gameNextLevel {
@@ -296,6 +315,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		return
 	}
 	ebitenutil.DebugPrint(screen, gameTitle+": level "+levelString)
+
 	// draw player
 	vector.DrawFilledRect(screen, g.playerX, g.playerY, playerSize, playerSize, color.White, false)
 
