@@ -123,11 +123,11 @@ func (g *Game) Update() error {
 func (g *Game) handleKeyPress() {
 	// Move player
 	// move left
-	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
+	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) && g.playerX > 0 {
 		g.playerX -= playerMoveSpeed
 	}
 	// move right
-	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
+	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) && (g.playerX+playerSize) < screenWidth {
 		g.playerX += playerMoveSpeed
 	}
 	// fire bullets
@@ -387,7 +387,6 @@ func main() {
 	audioContext := audio.NewContext(sampleRate)
 	soundPlayer := NewSoundPlayer(audioContext)
 
-	// Load each sound effect
 	loadSounds(soundPlayer)
 
 	game := &Game{
