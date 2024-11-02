@@ -30,7 +30,7 @@ type Game struct {
 }
 
 const (
-	gameTitle = "My Space Invaders"
+	gameTitle = "Ebit Invaders"
 
 	screenWidth  = 640
 	screenHeight = 480
